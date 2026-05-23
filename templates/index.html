@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Triaje Clínico</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-md w-full bg-white rounded-xl shadow-lg overflow-hidden">
+        
+        <!-- Header -->
+        <div class="bg-blue-600 p-6 text-center">
+            <h1 class="text-2xl font-bold text-white">Sistema de Triaje Clínico</h1>
+            <p class="text-blue-100 mt-2 text-sm">Ingrese los signos vitales del paciente para obtener una predicción.</p>
+        </div>
+        
+        <div class="p-6">
+            <!-- Formulario -->
+            <form id="triage-form" class="space-y-4">
+                <div>
+                    <label for="temperatura" class="block text-sm font-medium text-gray-700 mb-1">Temperatura (°C)</label>
+                    <input type="number" step="0.1" id="temperatura" name="temperatura" required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Ej. 37.5">
+                </div>
+                
+                <div>
+                    <label for="frecuencia_cardiaca" class="block text-sm font-medium text-gray-700 mb-1">Frecuencia Cardíaca (lpm)</label>
+                    <input type="number" step="1" id="frecuencia_cardiaca" name="frecuencia_cardiaca" required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Ej. 80">
+                </div>
+                
+                <div>
+                    <label for="presion_arterial" class="block text-sm font-medium text-gray-700 mb-1">Presión Arterial Sistólica (mmHg)</label>
+                    <input type="number" step="1" id="presion_arterial" name="presion_arterial" required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Ej. 120">
+                </div>
+                
+                <button type="submit" 
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 ease-in-out transform hover:-translate-y-1">
+                    Diagnosticar
+                </button>
+            </form>
+            
+            <!-- Contenedor del Resultado (Oculto inicialmente) -->
+            <div id="result-container" class="mt-6 hidden">
+                <div id="result-alert" class="p-4 rounded-lg border flex items-center justify-between transition-all duration-300">
+                    <div>
+                        <p class="text-sm font-semibold opacity-80" id="result-label">Diagnóstico Sugerido</p>
+                        <p class="text-lg font-bold mt-1" id="result-text">-</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lógica de interaccion (Vanilla JS) -->
+    <script>
+        document.getElementById('triage-form').addEventListener('submit', async function(e) {
+            e.preventDefault(); // Evitar recarga de página
+            
+            const btn = this.querySelector('button[type="submit"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = 'Procesando...';
+            btn.disabled = true;
+            
+            // Recolectar datos
+            const data = {
+                temperatura: parseFloat(document.getElementById('temperatura').value),
+                frecuencia_cardiaca: parseFloat(document.getElementById('frecuencia_cardiaca').value),
+                presion_arterial: parseFloat(document.getElementById('presion_arterial').value)
+            };
+            
+            try {
+                // Hacer llamado al endpoint /predecir de la misma app Flask
+                const response = await fetch('/predecir', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    const prediccion = result.prediccion;
+                    const resultContainer = document.getElementById('result-container');
+                    const resultAlert = document.getElementById('result-alert');
+                    const resultText = document.getElementById('result-text');
+                    
+                    // Resetear clases dinámicas previas
+                    resultAlert.className = 'p-4 rounded-lg border flex items-center justify-between transition-all duration-300';
+                    
+                    // Lógica visual: asignar colores según la gravedad
+                    if (prediccion === 'NO ENFERMO') {
+                        resultAlert.classList.add('bg-green-50', 'border-green-200', 'text-green-800');
+                    } else if (prediccion === 'ENFERMEDAD LEVE') {
+                        resultAlert.classList.add('bg-yellow-50', 'border-yellow-200', 'text-yellow-800');
+                    } else if (prediccion === 'ENFERMEDAD AGUDA') {
+                        resultAlert.classList.add('bg-orange-50', 'border-orange-200', 'text-orange-800');
+                    } else if (prediccion === 'ENFERMEDAD CRÓNICA') {
+                        resultAlert.classList.add('bg-red-50', 'border-red-200', 'text-red-800');
+                    } else {
+                        resultAlert.classList.add('bg-gray-50', 'border-gray-200', 'text-gray-800');
+                    }
+                    
+                    // Mostrar resultado
+                    resultText.textContent = prediccion;
+                    resultContainer.classList.remove('hidden');
+                } else {
+                    alert('Error en la predicción: ' + (result.error || 'Problema desconocido con el servidor.'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Ocurrió un error al comunicarse con el servidor.');
+            } finally {
+                // Restaurar estado del botón
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
