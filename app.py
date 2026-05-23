@@ -27,8 +27,11 @@ def predecir():
     # Lógica condicional basada en umbrales de gravedad clínica
     estado = "NO ENFERMO"
     
+    # Condiciones para ENFERMEDAD TERMINAL (Riesgo vital inminente)
+    if temperatura >= 41.0 or frecuencia_cardiaca >= 150 or presion_arterial >= 200:
+        estado = "ENFERMEDAD TERMINAL"
     # Condiciones para ENFERMEDAD CRÓNICA (Extrema gravedad en cualquier indicador)
-    if temperatura >= 40.0 or frecuencia_cardiaca >= 130 or presion_arterial >= 180:
+    elif temperatura >= 40.0 or frecuencia_cardiaca >= 130 or presion_arterial >= 180:
         estado = "ENFERMEDAD CRÓNICA"
     # Condiciones para ENFERMEDAD AGUDA (Gravedad moderada/alta)
     elif temperatura >= 39.0 or frecuencia_cardiaca >= 110 or presion_arterial >= 140:

@@ -4,7 +4,7 @@
 
 Este proyecto aborda el reto clínico de predecir enfermedades comunes y huérfanas basándose en síntomas, superando el problema de la escasez de datos mediante un enfoque estructurado de MLOps y simulaciones clínicas robustas. Con el fin de facilitar la adopción tecnológica en entornos médicos, este repositorio contiene el microservicio de diagnóstico empaquetado para que los médicos puedan consumirlo de manera inmediata y confiable.
 
-Como entregable técnico de la Fase 2 del taller de MLOps, este proyecto implementa un servicio web simulado y contenerizado que proporciona predicciones de diagnóstico basadas en tres indicadores clínicos numéricos del paciente (temperatura, frecuencia cardíaca y presión arterial). El objetivo principal es demostrar la correcta implementación de la ingeniería de despliegue mediante Docker, exponiendo una API robusta, validada y lista para ser consumida.
+Como entregable técnico de la Fase 2 del taller de MLOps, este proyecto implementa un servicio web simulado y contenerizado que proporciona predicciones de diagnóstico (clasificando en 5 estados posibles, incluyendo ENFERMEDAD TERMINAL) basadas en tres indicadores clínicos numéricos del paciente (temperatura, frecuencia cardíaca y presión arterial). El objetivo principal es demostrar la correcta implementación de la ingeniería de despliegue mediante Docker, exponiendo una API robusta, validada y lista para ser consumida.
 
 ---
 
@@ -83,9 +83,9 @@ Ejecuta el siguiente comando `curl`. *Atención usuarios de Windows: si estás u
 curl -X POST http://localhost:5000/predecir \
      -H "Content-Type: application/json" \
      -d '{
-           "temperatura": 39.5,
-           "frecuencia_cardiaca": 115,
-           "presion_arterial": 135
+           "temperatura": 41.5,
+           "frecuencia_cardiaca": 155,
+           "presion_arterial": 205
          }'
 ```
 
@@ -94,11 +94,11 @@ curl -X POST http://localhost:5000/predecir \
 ```json
 {
   "inputs": {
-    "frecuencia_cardiaca": 115.0,
-    "presion_arterial": 135.0,
-    "temperatura": 39.5
+    "frecuencia_cardiaca": 155.0,
+    "presion_arterial": 205.0,
+    "temperatura": 41.5
   },
-  "prediccion": "ENFERMEDAD AGUDA"
+  "prediccion": "ENFERMEDAD TERMINAL"
 }
 ```
 
