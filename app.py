@@ -1,6 +1,11 @@
 from flask import Flask, request, jsonify, render_template
+import json
+import os
+from datetime import datetime
 
 app = Flask(__name__)
+
+LOG_FILE = 'predictions_log.json'
 
 @app.route('/')
 def index():
@@ -40,6 +45,33 @@ def predecir():
     elif temperatura > 37.5 or frecuencia_cardiaca > 90 or presion_arterial > 120:
         estado = "ENFERMEDAD LEVE"
 
+    # Guardar en log de estadísticas
+    nuevo_registro = {
+        "timestamp": datetime.now().isoformat(),
+        "inputs": {
+            "temperatura": temperatura,
+            "frecuencia_cardiaca": frecuencia_cardiaca,
+            "presion_arterial": presion_arterial
+        },
+        "prediccion": estado
+    }
+    
+    logs = []
+    if os.path.exists(LOG_FILE):
+        try:
+            with open(LOG_FILE, 'r', encoding='utf-8') as f:
+                logs = json.load(f)
+        except Exception:
+            pass # Si falla (ej. corrupto o vacío), empezamos una nueva lista
+            
+    logs.append(nuevo_registro)
+    
+    try:
+        with open(LOG_FILE, 'w', encoding='utf-8') as f:
+            json.dump(logs, f, ensure_ascii=False, indent=4)
+    except Exception as e:
+        print(f"Error escribiendo log: {e}")
+
     # Retornar la respuesta en formato JSON
     return jsonify({
         "inputs": {
@@ -49,6 +81,41 @@ def predecir():
         },
         "prediccion": estado
     })
+
+@app.route('/estadisticas', methods=['GET'])
+def estadisticas():
+    resumen = {
+        "conteo_categorias": {
+            "NO ENFERMO": 0,
+            "ENFERMEDAD LEVE": 0,
+            "ENFERMEDAD AGUDA": 0,
+            "ENFERMEDAD CRÓNICA": 0,
+            "ENFERMEDAD TERMINAL": 0
+        },
+        "ultimas_5_predicciones": [],
+        "fecha_ultima_prediccion": None
+    }
+    
+    if os.path.exists(LOG_FILE):
+        try:
+            with open(LOG_FILE, 'r', encoding='utf-8') as f:
+                logs = json.load(f)
+                
+            if logs:
+                for log in logs:
+                    cat = log.get('prediccion')
+                    if cat in resumen["conteo_categorias"]:
+                        resumen["conteo_categorias"][cat] += 1
+                
+                ultimas_5 = logs[-5:]
+                ultimas_5.reverse()
+                resumen["ultimas_5_predicciones"] = ultimas_5
+                resumen["fecha_ultima_prediccion"] = logs[-1].get('timestamp')
+                
+        except Exception as e:
+            print(f"Error leyendo log: {e}")
+            
+    return jsonify(resumen)
 
 if __name__ == '__main__':
     # La aplicación corre en el puerto 5000 y escucha en todas las interfaces de red (0.0.0.0)
