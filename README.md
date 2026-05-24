@@ -34,12 +34,14 @@ Presentamos a continuación la estructura del árbol de directorios de este micr
 ├── Dockerfile
 ├── README.md
 ├── app.py
+├── predictions_log.json
 ├── requirements.txt
 └── templates/
     └── index.html
 ```
 
 * `app.py`: Contiene la lógica del servidor web (orquestado vía Gunicorn y Flask) y el árbol de decisión clínica para el triaje.
+* `predictions_log.json`: Archivo local auto-generado que almacena un registro histórico de las predicciones realizadas.
 * `templates/index.html`: Plantilla principal del frontend web de la aplicación.
 * `requirements.txt`: Declaración de las dependencias mínimas requeridas.
 * `Dockerfile`: Receta de construcción de la imagen, estructurada secuencialmente para optimizar el uso de la memoria caché de Docker.
@@ -72,7 +74,7 @@ docker run -d -p 5000:5000 --name api-diagnostico servicio-diagnostico
 Una vez levantado el contenedor, tienes distintas formas de interactuar con el sistema:
 
 **Opción A: Interfaz Web (Recomendada para usuarios finales)**
-Abre tu navegador web y navega a [http://localhost:5000](http://localhost:5000). Verás una interfaz gráfica amigable donde podrás ingresar los signos vitales del paciente y obtener el diagnóstico clínico instantáneamente sin necesidad de usar la terminal.
+Abre tu navegador web y navega a [http://localhost:5000](http://localhost:5000). Verás una interfaz gráfica amigable donde podrás ingresar los signos vitales del paciente y obtener el diagnóstico clínico instantáneamente sin necesidad de usar la terminal. Además, incluye un panel dinámico para consultar las estadísticas del sistema en tiempo real.
 
 **Opción B: Petición POST a la API REST (Recomendada para integración de sistemas)**
 El servicio se encuentra escuchando peticiones en `http://localhost:5000/predecir`. Requiere el envío de 3 variables clínicas: `temperatura`, `frecuencia_cardiaca` y `presion_arterial`.
@@ -107,6 +109,38 @@ También puedes consultar el modelo directamente a través de los parámetros en
 
 ```bash
 curl "http://localhost:5000/predecir?temperatura=37.0&frecuencia_cardiaca=80&presion_arterial=110"
+```
+
+**Opción D: Consulta de Estadísticas (Endpoint GET)**
+El servicio expone una ruta para consultar el resumen histórico de las predicciones.
+
+```bash
+curl http://localhost:5000/estadisticas
+```
+
+**Respuesta Esperada:**
+```json
+{
+  "conteo_categorias": {
+    "NO ENFERMO": 0,
+    "ENFERMEDAD LEVE": 0,
+    "ENFERMEDAD AGUDA": 0,
+    "ENFERMEDAD CRÓNICA": 0,
+    "ENFERMEDAD TERMINAL": 1
+  },
+  "fecha_ultima_prediccion": "2026-05-23T18:45:00.123456",
+  "ultimas_5_predicciones": [
+    {
+      "inputs": {
+        "frecuencia_cardiaca": 155.0,
+        "presion_arterial": 205.0,
+        "temperatura": 41.5
+      },
+      "prediccion": "ENFERMEDAD TERMINAL",
+      "timestamp": "2026-05-23T18:45:00.123456"
+    }
+  ]
+}
 ```
 
 ---
